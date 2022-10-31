@@ -2,6 +2,7 @@ defmodule RustlerExperiment do
   @moduledoc """
   Documentation for `RustlerExperiment`.
   """
+  alias RustlerExperiment.Native
 
   @doc """
   Hello world.
@@ -15,11 +16,10 @@ defmodule RustlerExperiment do
   def hello do
     :world
   end
-end
 
-defmodule RustlerExperiment.Native do
-  use Rustler, otp_app: :rustler_experiment, crate: :rustlerexperiment
+  def add(a, b), do: Native.add(a, b)
 
-  def add(_, _), do: :erlang.nif_error(:nif_not_loaded)
-
+  def mrt_parser(path, _opts \\ []) do
+    Native.mrt_parser(path)
+  end
 end
