@@ -1,5 +1,5 @@
 use bgpkit_parser::BgpkitParser;
-use rustler::{Env, ListIterator, NifResult, Term};
+use rustler::{Env, ListIterator, MapIterator, NifResult, Term};
 use serde_json::{Result, Value};
 use serde_rustler::{from_term, to_term};
 use std::collections::{hash_map, HashMap};
@@ -10,12 +10,21 @@ fn add(a: i64, b: i64) -> i64 {
 }
 
 #[rustler::nif]
-fn mrt_parser<'a>(env: Env<'a>, path: String) -> NifResult<Term<'a>> {
-    let mut map = Term::map_new(env);
+fn mrt_parser<'a>(env: Env<'a>, path: String, filters: MapIterator<'a>) -> NifResult<Term<'a>> {
     let mut list = Term::list_new_empty(env);
+    let parser = BgpkitParser::new(&path).unwrap();
+    let elements = filters.fold(parser, |filtered, (k, v)| {
+        filtered
+            .add_filter(
+                &k.decode::<String>().unwrap(),
+                &v.decode::<String>().unwrap(),
+            )
+            .unwrap()
+    });
 
-    let elements = BgpkitParser::new(&path).unwrap();
+    // let elements = BgpkitParser::new(&path).unwrap();
     for elem in elements {
+        let mut map = Term::map_new(env);
         let str = serde_json::to_string(&elem).unwrap();
         let hm: HashMap<String, Value> = serde_json::from_str(&str).unwrap();
         map = Term::map_put(map, "timestamp", hm.get("timestamp").unwrap().as_f64()).unwrap();
@@ -45,9 +54,4 @@ fn mrt_parser<'a>(env: Env<'a>, path: String) -> NifResult<Term<'a>> {
     Ok(list)
 }
 
-#[rustler::nif]
-fn sample_list<'a>(env: Env<'a>, filters: ListIterator) {}
-rustler::init!(
-    "Elixir.RustlerExperiment.Native",
-    [add, mrt_parser, sample_list]
-);
+rustler::init!("Elixir.RustlerExperiment.Native", [add, mrt_parser]);

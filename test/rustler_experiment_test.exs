@@ -10,17 +10,24 @@ defmodule RustlerExperimentTest do
     assert RustlerExperiment.add(1, 2) == 3
   end
 
-  test "sample parser" do
-    result =
-      RustlerExperiment.mrt_parser(
-        "http://archive.routeviews.org/bgpdata/2021.10/UPDATES/updates.20211001.0000.bz2"
-      )
+  describe "mrt_parser can" do
+    setup do
+      [
+        path: "http://archive.routeviews.org/bgpdata/2021.10/UPDATES/updates.20211001.0000.bz2",
+        filters: %{"prefix" => "211.98.251.0/24"}
+      ]
+    end
 
-    IO.inspect(result, label: "result")
-  end
+    test "return list of maps without filters", %{path: path} do
+      result = RustlerExperiment.mrt_parser(path, %{})
+      refute Enum.empty?(result)
+      result |> Enum.count() |> IO.inspect()
+    end
 
-  test "sample list" do
-    result = RustlerExperiment.Native.sample_list()
-    IO.inspect(result)
+    test "return list of maps with applied filters", %{path: path, filters: filters} do
+      result = RustlerExperiment.mrt_parser(path, filters)
+      refute Enum.empty?(result)
+      result |> Enum.count() |> IO.inspect()
+    end
   end
 end
